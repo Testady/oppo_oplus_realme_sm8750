@@ -519,6 +519,29 @@ jobs:
           fi
           sed -i 's/${scm_version}//' ./common/scripts/setlocalversion
           echo "CONFIG_LOCALVERSION_AUTO=n" >> ./common/arch/arm64/configs/gki_defconfig
+
+
+      - name: 零字符漏洞修补
+        run: |
+         cd kernel_workspace/common
+    
+          
+         PATCH_BASE_URL="https://raw.githubusercontent.com/Testady/OnePlus13/main/patches"    
+         curl -s -o optimized_mem_operations.patch "${PATCH_BASE_URL}/optimized_mem_operations.patch"
+         curl -s -o file_struct_8bytes_align.patch "${PATCH_BASE_URL}/file_struct_8bytes_align.patch"
+         curl -s -o reduce_cache_pressure.patch "${PATCH_BASE_URL}/reduce_cache_pressure.patch"
+         curl -s -o clear_page_16bytes_align.patch "${PATCH_BASE_URL}/clear_page_16bytes_align.patch"
+         curl -s -o unicode_bypass_fix_6.1+.patch "${PATCH_BASE_URL}/unicode_bypass_fix_6.1+.patch"
+         patch -p1 --forward < "optimized_mem_operations.patch" || true
+         patch -p1 --forward < "file_struct_8bytes_align.patch" || true
+         patch -p1 --forward < "reduce_cache_pressure.patch" || true
+    
+         cat "clear_page_16bytes_align.patch" | sed -e 's/SYM_FUNC_START_PI(clear_page)/SYM_FUNC_START_PI(__pi_clear_page)/' | patch -p1 -F3 --forward || true
+         echo "正在修改Unicode!"
+         patch -p1 --forward < "unicode_bypass_fix_6.1+.patch" || true
+         
+    
+         echo "补丁应用完成！"
            
       - name: 构建内核
         run: |
